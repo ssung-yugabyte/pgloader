@@ -1,0 +1,46 @@
+From centos:centos8 as builder
+RUN yum install epel-release -y && yum install -y \
+        bzip2 \
+        ca-certificates \
+        curl \
+        freetds-dev \
+        gawk \
+        git \
+        libsqlite3-dev \
+        libssl1.1 \
+        libzip-dev \
+        make \
+        openssl \
+        patch \
+        sbcl \
+        freetds \
+        freetds-devel \
+        time \
+        unzip \
+        wget \
+        cl-ironclad \
+        cl-babel
+
+  RUN curl -SL https://github.com/Clozure/ccl/releases/download/v1.12.1/ccl-1.12.1-linuxx86.tar.gz \
+      | tar xz -C /usr/local/src/ \
+      && mv /usr/local/src/ccl/scripts/ccl64 /usr/local/bin/ccl
+
+  COPY ./ /opt/src/pgloader
+
+  RUN mkdir -p /opt/src/pgloader/build/bin \
+      && cd /opt/src/pgloader \
+      && make CL=ccl DYNSIZE=8192 clones save
+
+FROM centos:centos8
+RUN yum install epel-release -y && yum install -y \
+              curl \
+        freetds-dev \
+        gawk \
+        git \
+        libsqlite3-dev \
+        libssl1.1 \
+        libzip-dev \
+        make \
+        sbcl\
+        unzip
+COPY --from=builder /opt/src/pgloader/build/bin/pgloader /usr/local/bin
